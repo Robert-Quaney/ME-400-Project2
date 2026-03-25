@@ -31,6 +31,15 @@ const int OPTO_PIN = 38;
 const int TILT_SERVO_PIN = 35;
 const int PAN_SERVO_PIN = 36; 
 
+//DAN- add lines 35-40 to finish main document steps 13-15
+//Speaker channel
+const int SPK_CHANNEL = 1; 
+// PWM channel
+const int PWM_CHANNEL = 2;
+// Audio channel
+const int AUDIO_CHANNEL = 4; 
+
+
 void ShowDisplay(screen val, char optionstate, char keypressed, bool intdisplay);
 //
 //  Setup(): Perform initialization
@@ -59,7 +68,7 @@ void setup()
     pinMode(MAX_SO_PIN,INPUT);
 
     // MOSFET Pin
-    pin<Mode(PWM_PIN,OUTPUT);
+    pinMode(PWM_PIN,OUTPUT);
 
     // optocouple pin
     pinMode(OPTO_PIN,INPUt);
