@@ -75,7 +75,7 @@ void setup()
 
     //tilt and pan servo pins
     pinMode(TILT_SERVO_PIN,OUTPUT);
-    pinMode(PAN_SERVO_OUTPUT);
+    pinMode(PAN_SERVO_OUTPUT,OUTPUT);
     // Initialize IR Communications
     oIR.IRInitialize();
     // Show main menu when Arduino starts
