@@ -71,7 +71,7 @@ void setup()
     pinMode(PWM_PIN,OUTPUT);
 
     // optocouple pin
-    pinMode(OPTO_PIN,INPUt);
+    pinMode(OPTO_PIN,INPUT);
 
     //tilt and pan servo pins
     pinMode(TILT_SERVO_PIN,OUTPUT);
