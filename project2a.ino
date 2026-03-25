@@ -41,6 +41,13 @@ const int AUDIO_CHANNEL = 4;
 
 
 void ShowDisplay(screen val, char optionstate, char keypressed, bool intdisplay);
+Servo pservo;
+Servo tservo;
+pservo.setPeriodHertz(50);
+tservo.setPeriodHertz(50);
+
+int pangle = 90;//initializing angle to 90 degrees
+int tangle = 90;//initializing angle to 90 degrees
 //
 //  Setup(): Perform initialization
 //
@@ -48,6 +55,7 @@ void setup()
 {
     //  Setup Serial Port
     Serial.begin(115200);
+    Dabble.begin("Group3");
     while (!Serial)
     {
         // wait for serial to start
@@ -66,7 +74,8 @@ void setup()
     pinMode(MAX_CS_PIN,OUTPUT);
     pinMode(MAX_CLK_PIN,OUTPUT);
     pinMode(MAX_SO_PIN,INPUT);
-
+    
+    ESP32PWM::allocateTimer(3); // set servo objects to 20 milliseconds
     // MOSFET Pin
     pinMode(PWM_PIN,OUTPUT);
 
@@ -76,6 +85,12 @@ void setup()
     //tilt and pan servo pins
     pinMode(TILT_SERVO_PIN,OUTPUT);
     pinMode(PAN_SERVO_OUTPUT,OUTPUT);
+    tservo.attach(TILT_SERVO_PIN);
+    pservo.attach(PAN_SERVO);
+    tservo.write(90);
+    pservo.write(90);
+    tservo.detach(TILT_SERVO_PIN);
+    pservo.detach(PAN_SERVO);   
     // Initialize IR Communications
     oIR.IRInitialize();
     // Show main menu when Arduino starts
@@ -225,6 +240,21 @@ void Option1()
 void Option2(char optionstate)
 {
     oLCD.LCDInitialize(LANDSCAPE, false);
+
+    char[20];//create character array
+    sprintf(text, "PAN ANGLE");
+    oLCD.print(text, CENTER,30);//output text(PAN ANGLE) to screen
+    oLCD.printNumF(pangle, 4, CENTER, 45);//output pan angle number to screen
+
+    sprintf(text, "TILT ANGLE");
+    oLCD.print(text, CENTER,30);//output text(tilt ANGLE) to screen
+    oLCD.printNumF(tangle, 4, CENTER, 45);//output tilt angle number to screen
+
+    Servo objservo; //Declare servo as object
+    servo.setPeriodHertz(50);//Set servo frequency to 50hz
+    objservo.attach(servoPin); //attaching the servopin to the object
+
+    objservo.write(90); //move servo to 90 degree position
 }
 //
 //  Code for Option3
