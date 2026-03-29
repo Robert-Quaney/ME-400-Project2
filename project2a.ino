@@ -42,25 +42,30 @@ const int AUDIO_CHANNEL = 4;
 
 
 void ShowDisplay(screen val, char optionstate, char keypressed, bool intdisplay);
+
+void Option1();
+void Option2(char optionstate);
+void Option3(char optionstate, char keypressed);
+void Option4(char keypressed);
+void Option5();
+
 Servo pservo;
 Servo tservo;
-pservo.setPeriodHertz(50);
-tservo.setPeriodHertz(50);
 
-int pangle = 90;//initializing angle to 90 degrees
-int tangle = 90;//initializing angle to 90 degrees
+int pangle = 90;//angle to 90 degrees
+int tangle = 90;//angle to 90 degrees
 //
-//  Setup(): Perform initialization
+//  Setup()
 //
 void setup()
 {
-    //  Setup Serial Port
     Serial.begin(115200);
     Dabble.begin("Group3");
     while (!Serial)
     {
         // wait for serial to start
     }
+
 
     // switch pin inputs
     pinMode(SW1_PIN, INPUT_PULLUP);
@@ -75,6 +80,7 @@ void setup()
     pinMode(MAX_CS_PIN,OUTPUT);
     pinMode(MAX_CLK_PIN,OUTPUT);
     pinMode(MAX_SO_PIN,INPUT);
+    digitalWrite(MAX_CS_PIN, HIGH);
     
     ESP32PWM::allocateTimer(3); // set servo objects to 20 milliseconds
     // MOSFET Pin
@@ -82,16 +88,19 @@ void setup()
 
     // optocouple pin
     pinMode(OPTO_PIN,INPUT);
-
+    
     //tilt and pan servo pins
+    pservo.setPeriodHertz(50);
+    tservo.setPeriodHertz(50);
     pinMode(TILT_SERVO_PIN,OUTPUT);
-    pinMode(PAN_SERVO_OUTPUT,OUTPUT);
+    pinMode(PAN_SERVO_PIN,OUTPUT);
     tservo.attach(TILT_SERVO_PIN);
-    pservo.attach(PAN_SERVO);
+    pservo.attach(PAN_SERVO_PIN);
     tservo.write(90);
     pservo.write(90);
-    tservo.detach(TILT_SERVO_PIN);
-    pservo.detach(PAN_SERVO);   
+    delay(500);
+    tservo.detach();
+    pservo.detach();   
     // Initialize IR Communications
     oIR.IRInitialize();
     // Show main menu when Arduino starts
