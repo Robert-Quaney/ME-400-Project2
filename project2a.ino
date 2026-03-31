@@ -14,11 +14,11 @@ irhelper oIR;
 //
 //  Define function prototypes.
 //
-//led pins need defined for option 1
-//const int LED1 = ??;
-//const int LED2 = ??;
-//const int LED3 = ??;
-//const int LED4 = ??;
+//led pins defined for option 1
+const int LED1 = 19;
+const int LED2 = 20;
+const int LED3 = 21;
+const int LED4 = 22;
 
 const int SW1_PIN = 18;
 const int SW2_PIN = 17;
