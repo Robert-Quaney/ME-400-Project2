@@ -72,6 +72,12 @@ void setup()
     {
         // wait for serial to start
     }
+    //led pins
+    pinMode(LED1, OUTPUT);
+    pinMode(LED2, OUTPUT);
+    pinMode(LED3, OUTPUT);
+    pinMode(LED4, OUTPUT);
+
 
 
     // switch pin inputs
