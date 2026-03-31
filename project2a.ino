@@ -14,6 +14,12 @@ irhelper oIR;
 //
 //  Define function prototypes.
 //
+//led pins need defined for option 1
+//const int LED1 = ??;
+//const int LED2 = ??;
+//const int LED3 = ??;
+//const int LED4 = ??;
+
 const int SW1_PIN = 18;
 const int SW2_PIN = 17;
 const int SW3_PIN = 16;
@@ -101,7 +107,13 @@ void setup()
     pservo.write(90);
     delay(500);
     tservo.detach();
-    pservo.detach();   
+    pservo.detach();
+
+    //call to setup & attachpin correction
+    ledcSetup(SPK_CHANNEL, 496, 8);
+    ledcAttachPin(SPEAKER_PIN, SPK_CHANNEL);
+
+    
     // Initialize IR Communications
     oIR.IRInitialize();
     // Show main menu when Arduino starts
@@ -251,50 +263,92 @@ void ShowDisplay(screen val, char optionstate, char keypressed, bool initdisplay
 void Option1()
 {
     oLCD.LCDInitialize(LANDSCAPE, false);
-    // attach speaker and channel
-    ledcAttachPin(SPEAKER_PIN, SKP_CHANNEL);
     // set background color
     oLCD.fillscreen(RCB_PURPLE);
     // print music playing
-    oLCD.print("MUSC PLAYING", 10, 10);
+    oLCD.print("MUSIC PLAYING", 10, 10);
 
-    // arrays for csv files
-    int frequency[] = {659,
-                        0,349,261,0,659,622,740,0,587,0,349,0,622,740,587,0,466,587,0,622,740,523,0,349,0,261,622,740,0,523,0,
-                        466,0,622,740,311,0,466,0,391,622,740,0,466,0,659,0,622,740,349,0,261,0,659,622,740,0,587,0,349,0,622,740,587,
-                        0,466,0,587,622,740,0,523,0,349,0,622,740,261,0,293,0,311,622,740,0,329,0,293,0,622,740,293,0,329,0,};
-    
+    if(Playing()){
+        playSong();
 
-    int duration[] = {113, 114, 113, 115, 113, 248, 496, 114, 113, 114, 113, 115, 248, 496, 113, 114, 113, 113, 115, 248, 496,
-                      113, 114, 113, 1, 113, 248, 496, 114, 113, 114,
-                      113, 114, 248, 496, 113, 115, 113, 114, 113, 248, 496, 1, 113, 114, 113, 114, 248, 496, 113, 1, 113, 114,
-                      113, 248, 496, 114, 113, 115, 113, 114, 248, 496, 113,
-                      114, 113, 1, 113, 248, 496, 114, 113, 114, 113, 1, 248, 496,
-                      113, 1364, 151, 77, 151, 248, 496, 76, 226, 115, 169, 58, 248, 496,
-                      151, 76, 113, 1, 151, 248, 496, 76, 151, 76, 151, 77, 248, 496,
-                      151, 76, 151, 76, 151, 248, 496, 77, 113, 113, 1, 113, 248, 496,
-                      151, 190, 151, 77, 151, 248, 496, 76, 151, 76, 226, 115, 248, 496,
-                      169, 58, 151, 77, 113, 248, 496, 151, 77, 151, 76, 151, 248, 496,
-                      76, 151, 76, 113, 1, 248, 496, 113, 1, 113, 226, 570, 248, 496,
-                      113, 113, 1, 151, 76, 248, 496, 151, 77, 226, 114, 169, 248, 496,
-                      59, 151, 76, 113, 1, 248, 496, 151, 76, 151, 76, 151, 248, 496,
-                      76, 151, 77,
-                      151, 76, 248, 496, 151, 76, 113, 1, 113, 248, 496, 1, 113, 151, 190, 151, 248, 496,
-                      76, 151, 77, 151, 76, 248, 496, 151, 76, 151, 76, 113, 248, 496, 1,
-                      113, 1, 113, 340, 248, 496, 1, 151, 77, 151, 76, 248, 496, 151, 76,
-                      113, 1, 151, 248, 496, 76, 188, 835, 151, 76, 248, 496, 151, 76, 226, 115,
-                      169, 248, 496, 58, 151, 77, 113, 151, 248, 496, 77, 151, 76, 151, 76, 248, 496,
-                      151, 76, 151, 77, 151, 248, 496, 76, 113, 1, 113, 113, 248, 496, 1, 151,
-                      190, 151, 76, 248, 496, 151, 76, 151, 77, 226, 248, 496, 115, 169, 58, 151, 76, 248, 496,
-                      113, 1, 151, 76, 151, 248, 496, 76, 151, 77, 151, 76, 248, 496,
-                      113, 113, 1, 113, 1, 248, 496, 226, 569, 75, 1, 75, 248, 496,
-                      1, 75, 151, 77, 113, 248, 496, 151, 77, 151, 76, 188, 248, 496, 39, 151, 76,
-                      151, 190, 248, 496, 151, 77, 151, 76, 113, 248, 496, 1, 151, 76, 151, 76, 248, 496,
-                      188, 39, 151, 190, 151, 248, 496, 77, 151, 76, 151, 76, 248, 496, 151,
-                      76, 151, 77, 151, 248, 496, 76, 113, 1, 113, 113, 248, 496, 1, 151, 303, 340, 1, 248, 496,
-                      151, 77, 151, 76, 113, 248, 496, 188, 40, 151, 76};
+    }
+    else{
+
+    }	 																
+}
+
+bool playSong(){
+    // song contains the sounds 
+    // note contains the length
+    uint16_t song[1] = {13}; // temp array because the actual array is over 1400 elements
+    uint16_t note[1] = {14}; // temp array because the actual array is over 1400 elements
+
+   
+
+    int N = sizeof(song)/sizeof(song[0]); // # elements in array song is 1439 and notes is 1414, use size of operato
+
+    for(int i = 0; i < N; i++){
+        if((i%8 == 6) || (i%8 == 7)){
+            continue; 
+        }
+        int duration = note[i];
+
+        ledcWriteTone(SPK_CHANNEL, song[i]);
+
+        if(digitalRead(SW1_PIN) == LOW){
+            duration = duration / 2; 
+        }
+
+        if(digitalRead(SW1_PIN) == HIGH){
+            duration = duration*2;  
+        }
+
+        int ledIndex = i%4; 
+
+        digitalWrite(LED1, LOW);
+        digitalWrite(LED2, LOW);
+        digitalWrite(LED3, LOW);
+        digitalWrite(LED4, LOW);
+
+        if(ledIndex == 0) digitalWrite(LED1, HIGH);
+        if(ledIndex == 1) digitalWrite(LED2, HIGH);
+        if(ledIndex == 2) digitalWrite(LED3, HIGH);
+        if(ledIndex == 3) digitalWrite(LED4, HIGH);
+
+        delay(duration);
+
+        //ledcWriteTone(SPK_CHANNEL, song[i]);
+
+        //delay(duration);
+
+        ledcWriteTone(SPK_CHANNEL, 0);
+
+        digitalWrite(LED1, LOW);
+        digitalWrite(LED2, LOW);
+        digitalWrite(LED3, LOW);
+        digitalWrite(LED4, LOW);
+
+        if(digitalRead(SW4_PIN) == LOW){
+            ledcWriteTone(SPK_CHANNEL, 0);
+
+            oLCD.clrScr();
+            oLCD.print("MSC STOPPED", 10, 10);
+            oLCD.print("PRESS <MODE>", 10, 30);
+
+
+            return false;
+        }
+    }
+    oLCD.clrScr();
+    oLCD.print("MSC FINISHED", 10, 10);
+    oLCD.print("PRESS <RETURN>", 10, 30);
+
+    ledcWriteTone(SPK_CHANNEL, 0);
+
+    return true; //song finished
 
 }
+//End of option 1
 
 void AttachServos()//initialize a function to attach servos
 {
