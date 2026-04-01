@@ -1,4 +1,4 @@
-#include <WiFi.h> 
+#include <WiFi.h>
 #include "lcdhelperv2.h"
 #include "irhelper.h"
 #include <ESP32Servo.h>
@@ -113,14 +113,22 @@ void setup()
 //
 void loop()
 {
+    unsigned long last_key_processed = oIR.GetKeyPressed();
 
-    unsigned long last_key_processed;
-    // Determine which key was pressed.
-    last_key_processed = oIR.GetKeyPressed();
-    // Return to the main menu any time the
-    // menu key is pressed.
-    if (last_key_processed == KEY_MENU)
-    {
+    if(last_key_processed == KEY_MENU) {
+        ShowDisplay(SC_MAIN, ' ', ' ', false);
+    }
+
+    // Update gamepad only if in Pan & Tilt screen
+    if(oLCD.SCREEN_STATE == SC_SUB2) {
+        HandleGamePad();
+    }
+
+    // Returning to main menu
+    if(last_key_processed == KEY_RETURN && oLCD.SCREEN_STATE == SC_SUB2) {
+        tservo.detach();
+        pservo.detach();
+        servosAttached = false;
         ShowDisplay(SC_MAIN, ' ', ' ', false);
     }
     else
@@ -133,8 +141,9 @@ void loop()
             }
             else if (last_key_processed == KEY_2)
             {
-                HandleGamePad();
+
                 ShowDisplay(SC_SUB2, 'A', ' ', false);
+                HandleGamePad();
             }
             else if (last_key_processed == KEY_3)
             {
@@ -252,10 +261,9 @@ void ShowDisplay(screen val, char optionstate, char keypressed, bool initdisplay
 void Option1()
 {
     oLCD.LCDInitialize(LANDSCAPE, false);
-
 }
 ///  //////////////////////////////////////////////////////////////////////////////////
-void AttachServos()//initialize a function to attach servos
+void AttachServos() // initialize a function to attach servos
 {
     if (servosAttached == false) // seeing if servos are set to attached
     {
@@ -280,10 +288,10 @@ void ServoScreenUpdate()
     oLCD.printNumF(tangle, 4, CENTER, 75); // output tilt angle number to screen
 
     sprintf(text, "PRESS <RETURN>");
-        oLCD.print(text, CENTER, 90); // output "PRESS <RETURN>" to the screen
+    oLCD.print(text, CENTER, 90); // output "PRESS <RETURN>" to the screen
 
     sprintf(text, "TO GO BACK");
-        oLCD.print(text, CENTER, 105); // output "TO GO BACK" to the screen
+    oLCD.print(text, CENTER, 105); // output "TO GO BACK" to the screen
 }
 void HandleGamePad()
 {
@@ -291,8 +299,8 @@ void HandleGamePad()
 
     if (GamePad.isUpPressed()) // Up button pressed
     {
-        tangle += 5;           // increase tilt angle by 5 degrees
-            if (tangle > 165) // see if tilt angle is going above maximum
+        tangle += 5;      // increase tilt angle by 5 degrees
+        if (tangle > 165) // see if tilt angle is going above maximum
         {
             tangle = 165; // set tilt angle at maximum
         }
@@ -300,8 +308,8 @@ void HandleGamePad()
     }
     if (GamePad.isDownPressed()) // Down button is pressed
     {
-        tangle -= 5;          // decrease tilt angle by 5 degrees
-            if (tangle < 15) // see if tilt angle is going below minimum
+        tangle -= 5;     // decrease tilt angle by 5 degrees
+        if (tangle < 15) // see if tilt angle is going below minimum
         {
             tangle = 15; // set tilt angle at minimum
         }
@@ -334,7 +342,7 @@ void HandleGamePad()
 void Option2(char optionstate)
 {
     ////////////////////////////////////////////////////////////////////////////////////
-    AttachServos();//call function to attach servos
+    AttachServos(); // call function to attach servos
     oLCD.LCDInitialize(LANDSCAPE, false);
     //////////////////////////////////////////////////////////
     char text[20]; // create character array
@@ -347,10 +355,10 @@ void Option2(char optionstate)
     oLCD.printNumF(tangle, 4, CENTER, 75); // output tilt angle number to screen
 
     sprintf(text, "PRESS <RETURN>");
-        oLCD.print(text, CENTER, 90); // output "PRESS <RETURN>" to the screen
+    oLCD.print(text, CENTER, 90); // output "PRESS <RETURN>" to the screen
 
     sprintf(text, "TO GO BACK");
-        oLCD.print(text, CENTER, 105); // output "TO GO BACK" to the screen
+    oLCD.print(text, CENTER, 105); // output "TO GO BACK" to the screen
     ////////////////////////////////////////////////////////////
 }
 //
