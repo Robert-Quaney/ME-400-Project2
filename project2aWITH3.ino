@@ -1,4 +1,4 @@
-#include <WiFi.h>
+#include <WiFi.h>  // ESP32 WiFi library
 #include "lcdhelperv2.h"
 #include "irhelper.h"
 #include <ESP32Servo.h>
@@ -29,9 +29,9 @@ const int MAX_SO_PIN = 13;
 const int PWM_PIN = 11;
 // optocoupler
 const int OPTO_PIN = 38;
-// pan and tilt
-const int PAN_SERVO_PIN = 36;
+// tilt and pan
 const int TILT_SERVO_PIN = 35;
+const int PAN_SERVO_PIN = 36;
 
 // DAN- add lines 35-40 to finish main document steps 13-15
 // Speaker channel
@@ -42,25 +42,35 @@ const int PWM_CHANNEL = 2;
 const int AUDIO_CHANNEL = 4;
 
 void ShowDisplay(screen val, char optionstate, char keypressed, bool intdisplay);
-
-void Option1();
-void Option2(char optionstate);
-void Option3(char optionstate, char keypressed);
-void Option4(char keypressed);
-void Option5();
-
 Servo pservo;
 Servo tservo;
 
-int pangle = 90; // angle to 90 degrees
-int tangle = 90; // angle to 90 degrees
-///////////////////////////////////////////////////////////////////////////////////////
-bool servosAttached = false; // setting servos as unattached
+int pangle = 90; // initializing angle to 90 degrees
+int tangle = 90; // initializing angle to 90 degrees
+
+// FOR OPTION 3
+const int PWM_FREQ = 496;
+const int PWM_RESOLUTION = 8;
+const int MOTOR_PIN = 25;
+
+volatile int pulseCount = 0;
+unsigned long lastTime = 0;
+const int PULSES_PER_REV = 1;
+
+void IRAM_ATTR countPulse()
+{
+    pulseCount++; // increment on each rising edge
+}
+
+// FOR OPTION 3
+
+
 //
-//  Setup()
+//  Setup(): Perform initialization
 //
 void setup()
 {
+    //  Setup Serial Port
     Serial.begin(115200);
     Dabble.begin("Group3");
     while (!Serial)
@@ -81,7 +91,6 @@ void setup()
     pinMode(MAX_CS_PIN, OUTPUT);
     pinMode(MAX_CLK_PIN, OUTPUT);
     pinMode(MAX_SO_PIN, INPUT);
-    digitalWrite(MAX_CS_PIN, HIGH);
 
     ESP32PWM::allocateTimer(3); // set servo objects to 20 milliseconds
     // MOSFET Pin
@@ -90,45 +99,39 @@ void setup()
     // optocouple pin
     pinMode(OPTO_PIN, INPUT);
 
-    // tilt and pan servo pins
-    pservo.setPeriodHertz(50);
-    tservo.setPeriodHertz(50);
-    pinMode(TILT_SERVO_PIN, OUTPUT);
-    pinMode(PAN_SERVO_PIN, OUTPUT);
-    tservo.attach(TILT_SERVO_PIN);
-    pservo.attach(PAN_SERVO_PIN);
-    tservo.write(90);
-    pservo.write(90);
-    delay(500);
-    tservo.detach();
-    pservo.detach();
+    
+    
     // Initialize IR Communications
     oIR.IRInitialize();
     // Show main menu when Arduino starts
     // for the 1st time or on reset.
     ShowDisplay(SC_MAIN, ' ', ' ', true);
+
+    // FOR OPTION 3
+
+    pservo.setPeriodHertz(50);
+    tservo.setPeriodHertz(50);
+
+    ledcSetup(PWM_CHANNEL, PWM_FREQ, PWM_RESOLUTION);
+    ledcAttachPin(MOTOR_PIN, PWM_CHANNEL);
+
+    pinMode(OPTO_PIN, INPUT);
+    attachInterrupt(digitalPinToInterrupt(OPTO_PIN), countPulse, RISING);
+    lastTime = millis(); // initialize timer
+    // FOR OPTION 3
 }
 //
 //  Loops(): Perform looping operations
 //
 void loop()
 {
-    unsigned long last_key_processed = oIR.GetKeyPressed();
-
-    if(last_key_processed == KEY_MENU) {
-        ShowDisplay(SC_MAIN, ' ', ' ', false);
-    }
-
-    // Update gamepad only if in Pan & Tilt screen
-    if(oLCD.SCREEN_STATE == SC_SUB2) {
-        HandleGamePad();
-    }
-
-    // Returning to main menu
-    if(last_key_processed == KEY_RETURN && oLCD.SCREEN_STATE == SC_SUB2) {
-        tservo.detach();
-        pservo.detach();
-        servosAttached = false;
+    unsigned long last_key_processed;
+    // Determine which key was pressed.
+    last_key_processed = oIR.GetKeyPressed();
+    // Return to the main menu any time the
+    // menu key is pressed.
+    if (last_key_processed == KEY_MENU)
+    {
         ShowDisplay(SC_MAIN, ' ', ' ', false);
     }
     else
@@ -141,9 +144,7 @@ void loop()
             }
             else if (last_key_processed == KEY_2)
             {
-
                 ShowDisplay(SC_SUB2, 'A', ' ', false);
-                HandleGamePad();
             }
             else if (last_key_processed == KEY_3)
             {
@@ -171,12 +172,8 @@ void loop()
         }
         else if (oLCD.SCREEN_STATE == SC_SUB2)
         {
-
             if (last_key_processed == KEY_RETURN)
             {
-                tservo.detach(); // detaching servos when leaving option2
-                pservo.detach();
-                servosAttached = false; // setting servos to detached
                 ShowDisplay(SC_MAIN, ' ', ' ', false);
             }
         }
@@ -262,111 +259,167 @@ void Option1()
 {
     oLCD.LCDInitialize(LANDSCAPE, false);
 }
-///  //////////////////////////////////////////////////////////////////////////////////
-void AttachServos() // initialize a function to attach servos
-{
-    if (servosAttached == false) // seeing if servos are set to attached
-    {
-        tservo.attach(TILT_SERVO_PIN); // attaching tilt servo
-        pservo.attach(PAN_SERVO_PIN);  // attaching pan servo
-
-        tservo.write(tangle); // moving servo to specified angle
-        pservo.write(pangle); // moving servo to specified angle
-
-        servosAttached = true; // setting servos to attached
-    }
-}
-void ServoScreenUpdate()
-{
-    char text[20]; // create character array
-    sprintf(text, "PAN ANGLE");
-    oLCD.print(text, CENTER, 30);          // output text(PAN ANGLE) to screen
-    oLCD.printNumF(pangle, 4, CENTER, 45); // output pan angle number to screen
-
-    sprintf(text, "TILT ANGLE");
-    oLCD.print(text, CENTER, 60);          // output text(tilt ANGLE) to screen
-    oLCD.printNumF(tangle, 4, CENTER, 75); // output tilt angle number to screen
-
-    sprintf(text, "PRESS <RETURN>");
-    oLCD.print(text, CENTER, 90); // output "PRESS <RETURN>" to the screen
-
-    sprintf(text, "TO GO BACK");
-    oLCD.print(text, CENTER, 105); // output "TO GO BACK" to the screen
-}
-void HandleGamePad()
-{
-    Dabble.processInput(); // starts collecting data from dabble
-
-    if (GamePad.isUpPressed()) // Up button pressed
-    {
-        tangle += 5;      // increase tilt angle by 5 degrees
-        if (tangle > 165) // see if tilt angle is going above maximum
-        {
-            tangle = 165; // set tilt angle at maximum
-        }
-        tservo.write(tangle); // write the tilt angle to the specified amount
-    }
-    if (GamePad.isDownPressed()) // Down button is pressed
-    {
-        tangle -= 5;     // decrease tilt angle by 5 degrees
-        if (tangle < 15) // see if tilt angle is going below minimum
-        {
-            tangle = 15; // set tilt angle at minimum
-        }
-        tservo.write(tangle);
-    }
-    if (GamePad.isLeftPressed()) // Left button is pressed
-    {
-        pangle += 5;      // pan 5 degrees to the left
-        if (pangle > 165) // see if pan angle is at the max
-        {
-            pangle = 165; // set pan angle to max if going above
-        }
-        pservo.write(pangle); // move servo to specified angle
-    }
-    if (GamePad.isRightPressed()) // Right button is pressed
-    {
-        pangle -= 5;     // pan 5 degrees to the right
-        if (pangle < 15) // see if the pan angle is at the min
-        {
-            pangle = 15; // set pan angle at min if going below
-        }
-        pservo.write(pangle); // move servo to specified angle
-    }
-    // update the display of new angles
-    ServoScreenUpdate(); // calls function to update ther servo screen
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-}
 
 void Option2(char optionstate)
 {
-    ////////////////////////////////////////////////////////////////////////////////////
-    AttachServos(); // call function to attach servos
     oLCD.LCDInitialize(LANDSCAPE, false);
-    //////////////////////////////////////////////////////////
-    char text[20]; // create character array
-    sprintf(text, "PAN ANGLE");
-    oLCD.print(text, CENTER, 30);          // output text(PAN ANGLE) to screen
-    oLCD.printNumF(pangle, 4, CENTER, 45); // output pan angle number to screen
-
-    sprintf(text, "TILT ANGLE");
-    oLCD.print(text, CENTER, 60);          // output text(tilt ANGLE) to screen
-    oLCD.printNumF(tangle, 4, CENTER, 75); // output tilt angle number to screen
-
-    sprintf(text, "PRESS <RETURN>");
-    oLCD.print(text, CENTER, 90); // output "PRESS <RETURN>" to the screen
-
-    sprintf(text, "TO GO BACK");
-    oLCD.print(text, CENTER, 105); // output "TO GO BACK" to the screen
-    ////////////////////////////////////////////////////////////
 }
 //
 //  Code for Option3
 //
-void Option3(char optionstate, char keypressed)
+void displayOption3(String duty, float speed)
 {
     oLCD.LCDInitialize(LANDSCAPE, false);
+    oLCD.print("DESIRED DUTY", 10, 10);
+    oLCD.print("CYCLE (%)", 10, 25);
+    oLCD.print(duty.c_str(), 10, 40);
+
+    oLCD.print("CALC'D SPEED", 10, 70);
+    char buffer[10];
+    sprintf(buffer, "%.1f", speed);
+    oLCD.print(buffer, 10, 85);
+}
+
+String getDutyFromIR()
+{
+    String input = "";
+    while (true)
+    {
+        unsigned long key = oIR.GetKeyPressed();
+
+        if (key >= KEY_0 && key <= KEY_9)
+        {
+            int num = key - KEY_0;
+            input += String(num);
+
+            // pad with leading zeros to 3 digits
+            String displayDuty = input;
+            while (displayDuty.length() < 3)
+                displayDuty = "0" + displayDuty;
+
+            displayOption3(displayDuty, 0);
+        }
+        else if (key == KEY_RETURN)
+        {
+            return input;
+        }
+    }
+}
+
+void rampMotor(int duty)
+{
+    int target = dutyToPWM(duty);
+
+    // ramp up
+    for (int i = 0; i <= target; i++)
+    {
+        ledcWrite(PWM_CHANNEL, i);
+        delay(10);
+    }
+
+    // ramp down
+    for (int i = target; i >= 0; i--)
+    {
+        ledcWrite(PWM_CHANNEL, i);
+        delay(10);
+    }
+}
+
+unsigned long runMotor(int duty)
+{
+    int targetPwm = dutyToPWM(duty);
+
+    // Ramp Up Sequence
+    for (int i = 0; i <= targetPwm; i++)
+    {
+        ledcWrite(PWM_CHANNEL, i);
+        delay(10);
+    }
+
+    // Continuous Measurement Loop
+    while (true)
+    {
+        ledcWrite(PWM_CHANNEL, targetPwm);
+        float speed = measureSpeed();
+        displayOption3(String(duty), speed);
+
+        delay(1000); // Wait 1 second
+
+        unsigned long key = oIR.GetKeyPressed();
+
+        // Check for exit conditions
+        if (key == KEY_MENU)
+        {
+            // Ramp Down Sequence
+            for (int i = targetPwm; i >= 0; i--)
+            {
+                ledcWrite(PWM_CHANNEL, i);
+                delay(10);
+            }
+
+            ledcWrite(PWM_CHANNEL, 0); // Ensure motor is stopped
+            return key;                // Tell Option3() which key caused the exit
+        }
+    }
+}
+
+
+
+float measureSpeed()
+{
+    unsigned long currentTime = millis();
+    float elapsedTime = (currentTime - lastTime) / 1000.0; // seconds
+
+    if (elapsedTime <= 0)
+        return 0;
+
+    // RPM calculation
+    float rpm = (pulseCount / (float)PULSES_PER_REV) / elapsedTime * 60.0;
+
+    // Reset counters for next measurement
+    pulseCount = 0;
+    lastTime = currentTime;
+
+    return rpm;
+}
+
+int dutyToPWM(int duty)
+{
+    if (duty < 0)
+        duty = 0;
+    if (duty > 100)
+        duty = 100;
+    return map(duty, 0, 100, 0, 255);
+}
+
+void Option3(char optionstate, char keypressed)
+{
+    while (true)
+    {
+        // Initial display
+        displayOption3("   ", 0);
+
+        // Get user input
+        String input = getDutyFromIR();
+        int duty = input.toInt();
+
+        // Clamp values
+        if (duty < 0)
+            duty = 0;
+        if (duty > 100)
+            duty = 100;
+
+        // Ramp motor
+unsigned long exitKey = runMotor(duty);
+
+
+
+        if (exitKey == KEY_MENU)
+        {
+            ShowDisplay(SC_MAIN, ' ', ' ', false);
+            break;
+        }
+    }
 }
 //
 //  Option to Move between pictures and songs.
