@@ -55,6 +55,12 @@ void Option3(char optionstate, char keypressed);
 void Option4(char keypressed);
 void Option5();
 
+double ReadThermoC();
+void sensorReadings();
+void updateTemp(double tempC);
+void updateCord(double latt, double longitude);
+void ReadCord(double &latt, double &longitude);
+
 Servo pservo;
 Servo tservo;
 
@@ -499,13 +505,104 @@ void Option4(char keypressed)
 {
     oLCD.LCDInitialize(LANDSCAPE, false);
 }
-//
-//  Thermocouple implementation Entry Point
-//
+
+// option 5 helpers 
+// screen update readings
+void sensorReadings()
+{
+ char text[20];
+
+oLCD.LCDInitialize(LANDSCAPE, false);
+    
+// what will print to the screen on the TFT
+sprintf(text, "SENSOR");oLCD.print(text, 10, 10);
+sprintf(text, "READINGS");oLCD.print(text, 10, 25);
+sprintf(text, "TEMP:");oLCD.print(text, 10, 45);
+sprintf(text, "LATT:");oLCD.print(text, 10, 65);
+sprintf(text, "LONG:");oLCD.print(text, 10, 85);
+}
+// bit reading (readThemocouple in Celsius) 
+// 
+double ReadThermoC()
+{
+ uint16_t data = 0; // makes a 16-bit integer called data that begins at zero. 
+
+    digitalWrite(MAX_CS_PIN, LOW); // CS pin low (CS means Chip select) (LOW tells the max6675 to read starting now)
+    delayMicroseconds(10); 
+
+    for (int i = 15; i >= 0; i--) // runs 16 times to cycle bits
+    {
+        digitalWrite(MAX_CLK_PIN, LOW); // clock pin to LOW (clock shows when the sensor presents the next bit)
+        delayMicroseconds(10);
+
+        if (digitalRead(MAX_SO_PIN) == HIGH) // SO pin check if it is HIGH (HIGH means bit = 1, !HIGH then bit = 0)
+        {
+            data = data + (uint16_t)pow(2, i); // bit value is 1, then it adds the value to the data
+        }
+
+        digitalWrite(MAX_CLK_PIN, HIGH); //clock pin to high
+        delayMicroseconds(10);
+    }
+
+    digitalWrite(MAX_CS_PIN, HIGH);
+
+    data = data / 8; // shift to the right 3 places (removes last three bits)
+    data = data % 4096; // keeps lowest 12 bits
+
+    return data * 0.25; // to degrees celsius
+}
+
+void updateTemp(double tempC)
+{
+oLCD.print("        ", 70, 45); // spaces act as a refresh to clear old temps
+oLCD.printNumF(tempC, 2, 70, 45); //prints new temp to 2 decimal places
+}
+
+void ReadCord(double &latt, double &longitude)
+{
+longitude = Sensor.getGPSlongitude();
+latt = Sensor.getGPSlatitude();
+}
+
+void updateCord(double latt, double longitude)
+{
+oLCD.print("        ", 70, 65); // clears old lattitude and enters new
+oLCD.printNumF(latt, 2, 70, 65);
+
+oLCD.print("        ", 70, 85); // clears old longitude and enters the new
+oLCD.printNumF(longitude, 2, 70, 85);
+}
+
 void Option5()
 {
-    oLCD.LCDInitialize(LANDSCAPE, false);
+    double tempC = 0.0;
+    double latt = 0.0;
+    double longitude = 0.0;
+    //button pressed starts at nothing pressed
+    //runs until RETURN on the remote is pressed
+    unsigned long button = KEY_NONE;
+
+    sensorReadings();
+
+    while (button != KEY_RETURN)
+
+    //check for dabble data (latt and long)    
+    {
+        Dabble.processInput();
+// read thermocouple in degrees Celsius 
+        tempC = ReadThermoC();
+// Read the location of the phone
+        ReadCord(latt, longitude);
+// update the temps to the current temp
+        updateTemp(tempC);
+// update the location to the current location of the phone
+        updateCord(latt, longitude);
+// check buttons pressed (return leaves option 5)
+        button = oIR.GetKeyPressed();
+        delay(300);
+    }
 }
+
 //********************************************************************
 //  END OPTION CODE
 //********************************************************************
