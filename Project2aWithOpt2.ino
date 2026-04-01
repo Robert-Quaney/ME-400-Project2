@@ -1,3 +1,4 @@
+#include <WiFi.h> 
 #include "lcdhelperv2.h"
 #include "irhelper.h"
 #include <ESP32Servo.h>
@@ -132,7 +133,7 @@ void loop()
             }
             else if (last_key_processed == KEY_2)
             {
-                HandleGamepad();
+                HandleGamePad();
                 ShowDisplay(SC_SUB2, 'A', ' ', false);
             }
             else if (last_key_processed == KEY_3)
@@ -251,141 +252,7 @@ void ShowDisplay(screen val, char optionstate, char keypressed, bool initdisplay
 void Option1()
 {
     oLCD.LCDInitialize(LANDSCAPE, false);
-    // attach speaker and channel
-    ledcAttachPin(SPEAKER_PIN, SKP_CHANNEL);
-    // set background color
-    oLCD.fillscreen(RCB_PURPLE);
-    // print music playing
-    oLCD.print("MUSC PLAYING", 10, 10);
 
-    // arrays for csv files
-    int frequency[] = {
-        659,
-        0,
-        349,
-        261,
-        0,
-        659,
-        622,
-        740,
-        0,
-        587,
-        0,
-        349,
-        0,
-        622,
-        740,
-        587,
-        0,
-        466,
-        587,
-        0,
-        622,
-        740,
-        523,
-        0,
-        349,
-        0,
-        261,
-        622,
-        740,
-        0,
-        523,
-        0,
-        466,
-        0,
-        622,
-        740,
-        311,
-        0,
-        466,
-        0,
-        391,
-        622,
-        740,
-        0,
-        466,
-        0,
-        659,
-        0,
-        622,
-        740,
-        349,
-        0,
-        261,
-        0,
-        659,
-        622,
-        740,
-        0,
-        587,
-        0,
-        349,
-        0,
-        622,
-        740,
-        587,
-        0,
-        466,
-        0,
-        587,
-        622,
-        740,
-        0,
-        523,
-        0,
-        349,
-        0,
-        622,
-        740,
-        261,
-        0,
-        293,
-        0,
-        311,
-        622,
-        740,
-        0,
-        329,
-        0,
-        293,
-        0,
-        622,
-        740,
-        293,
-        0,
-        329,
-        0,
-    };
-
-    int duration[] = {113, 114, 113, 115, 113, 248, 496, 114, 113, 114, 113, 115, 248, 496, 113, 114, 113, 113, 115, 248, 496,
-                      113, 114, 113, 1, 113, 248, 496, 114, 113, 114,
-                      113, 114, 248, 496, 113, 115, 113, 114, 113, 248, 496, 1, 113, 114, 113, 114, 248, 496, 113, 1, 113, 114,
-                      113, 248, 496, 114, 113, 115, 113, 114, 248, 496, 113,
-                      114, 113, 1, 113, 248, 496, 114, 113, 114, 113, 1, 248, 496,
-                      113, 1364, 151, 77, 151, 248, 496, 76, 226, 115, 169, 58, 248, 496,
-                      151, 76, 113, 1, 151, 248, 496, 76, 151, 76, 151, 77, 248, 496,
-                      151, 76, 151, 76, 151, 248, 496, 77, 113, 113, 1, 113, 248, 496,
-                      151, 190, 151, 77, 151, 248, 496, 76, 151, 76, 226, 115, 248, 496,
-                      169, 58, 151, 77, 113, 248, 496, 151, 77, 151, 76, 151, 248, 496,
-                      76, 151, 76, 113, 1, 248, 496, 113, 1, 113, 226, 570, 248, 496,
-                      113, 113, 1, 151, 76, 248, 496, 151, 77, 226, 114, 169, 248, 496,
-                      59, 151, 76, 113, 1, 248, 496, 151, 76, 151, 76, 151, 248, 496,
-                      76, 151, 77,
-                      151, 76, 248, 496, 151, 76, 113, 1, 113, 248, 496, 1, 113, 151, 190, 151, 248, 496,
-                      76, 151, 77, 151, 76, 248, 496, 151, 76, 151, 76, 113, 248, 496, 1,
-                      113, 1, 113, 340, 248, 496, 1, 151, 77, 151, 76, 248, 496, 151, 76,
-                      113, 1, 151, 248, 496, 76, 188, 835, 151, 76, 248, 496, 151, 76, 226, 115,
-                      169, 248, 496, 58, 151, 77, 113, 151, 248, 496, 77, 151, 76, 151, 76, 248, 496,
-                      151, 76, 151, 77, 151, 248, 496, 76, 113, 1, 113, 113, 248, 496, 1, 151,
-                      190, 151, 76, 248, 496, 151, 76, 151, 77, 226, 248, 496, 115, 169, 58, 151, 76, 248, 496,
-                      113, 1, 151, 76, 151, 248, 496, 76, 151, 77, 151, 76, 248, 496,
-                      113, 113, 1, 113, 1, 248, 496, 226, 569, 75, 1, 75, 248, 496,
-                      1, 75, 151, 77, 113, 248, 496, 151, 77, 151, 76, 188, 248, 496, 39, 151, 76,
-                      151, 190, 248, 496, 151, 77, 151, 76, 113, 248, 496, 1, 151, 76, 151, 76, 248, 496,
-                      188, 39, 151, 190, 151, 248, 496, 77, 151, 76, 151, 76, 248, 496, 151,
-                      76, 151, 77, 151, 248, 496, 76, 113, 1, 113, 113, 248, 496, 1, 151, 303, 340, 1, 248, 496,
-                      151, 77, 151, 76, 113, 248, 496, 188, 40, 151, 76};
 }
 ///  //////////////////////////////////////////////////////////////////////////////////
 void AttachServos()//initialize a function to attach servos
@@ -412,35 +279,35 @@ void ServoScreenUpdate()
     oLCD.print(text, CENTER, 60);          // output text(tilt ANGLE) to screen
     oLCD.printNumF(tangle, 4, CENTER, 75); // output tilt angle number to screen
 
-    sprintf(text, "PRESS <RETURN>")
+    sprintf(text, "PRESS <RETURN>");
         oLCD.print(text, CENTER, 90); // output "PRESS <RETURN>" to the screen
 
-    sprintf(text, "TO GO BACK")
+    sprintf(text, "TO GO BACK");
         oLCD.print(text, CENTER, 105); // output "TO GO BACK" to the screen
 }
-void HandleGamepad()
+void HandleGamePad()
 {
     Dabble.processInput(); // starts collecting data from dabble
 
     if (GamePad.isUpPressed()) // Up button pressed
     {
-        tangle += 5           // increase tilt angle by 5 degrees
+        tangle += 5;           // increase tilt angle by 5 degrees
             if (tangle > 165) // see if tilt angle is going above maximum
         {
             tangle = 165; // set tilt angle at maximum
         }
         tservo.write(tangle); // write the tilt angle to the specified amount
     }
-    if (Gamepad.isDownPressed()) // Down button is pressed
+    if (GamePad.isDownPressed()) // Down button is pressed
     {
-        tangle -= 5          // decrease tilt angle by 5 degrees
+        tangle -= 5;          // decrease tilt angle by 5 degrees
             if (tangle < 15) // see if tilt angle is going below minimum
         {
             tangle = 15; // set tilt angle at minimum
         }
         tservo.write(tangle);
     }
-    if (Gamepad.isLeftPressed()) // Left button is pressed
+    if (GamePad.isLeftPressed()) // Left button is pressed
     {
         pangle += 5;      // pan 5 degrees to the left
         if (pangle > 165) // see if pan angle is at the max
@@ -449,7 +316,7 @@ void HandleGamepad()
         }
         pservo.write(pangle); // move servo to specified angle
     }
-    if (Gamepad.isRightPressed()) // Right button is pressed
+    if (GamePad.isRightPressed()) // Right button is pressed
     {
         pangle -= 5;     // pan 5 degrees to the right
         if (pangle < 15) // see if the pan angle is at the min
@@ -459,7 +326,7 @@ void HandleGamepad()
         pservo.write(pangle); // move servo to specified angle
     }
     // update the display of new angles
-    ServoScreenUpdate() // calls function to update ther servo screen
+    ServoScreenUpdate(); // calls function to update ther servo screen
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 }
@@ -470,7 +337,7 @@ void Option2(char optionstate)
     AttachServos();//call function to attach servos
     oLCD.LCDInitialize(LANDSCAPE, false);
     //////////////////////////////////////////////////////////
-    char = text[20]; // create character array
+    char text[20]; // create character array
     sprintf(text, "PAN ANGLE");
     oLCD.print(text, CENTER, 30);          // output text(PAN ANGLE) to screen
     oLCD.printNumF(pangle, 4, CENTER, 45); // output pan angle number to screen
@@ -479,15 +346,12 @@ void Option2(char optionstate)
     oLCD.print(text, CENTER, 60);          // output text(tilt ANGLE) to screen
     oLCD.printNumF(tangle, 4, CENTER, 75); // output tilt angle number to screen
 
-    sprintf(text, "PRESS <RETURN>")
+    sprintf(text, "PRESS <RETURN>");
         oLCD.print(text, CENTER, 90); // output "PRESS <RETURN>" to the screen
 
-    sprintf(text, "TO GO BACK")
+    sprintf(text, "TO GO BACK");
         oLCD.print(text, CENTER, 105); // output "TO GO BACK" to the screen
     ////////////////////////////////////////////////////////////
-    if ()
-        pservo.attach(PAN_SERVO_PIN);
-    tservo.attach(TILT_SERVO_PIN);
 }
 //
 //  Code for Option3
