@@ -281,11 +281,11 @@ void ServoScreenUpdate()
     char text[20]; // create character array
     sprintf(text, "PAN ANGLE");
     oLCD.print(text, CENTER, 30);          // output text(PAN ANGLE) to screen
-    oLCD.printNumF(pangle, 4, CENTER, 45); // output pan angle number to screen
+    oLCD.printNumI(pangle, CENTER, 45, 3, ' '); // output pan angle number to screen
 
     sprintf(text, "TILT ANGLE");
     oLCD.print(text, CENTER, 60);          // output text(tilt ANGLE) to screen
-    oLCD.printNumF(tangle, 4, CENTER, 75); // output tilt angle number to screen
+    oLCD.printNumI(tangle, CENTER, 75, 3, ' '); // output tilt angle number to screen
 
     sprintf(text, "PRESS <RETURN>");
     oLCD.print(text, CENTER, 90); // output "PRESS <RETURN>" to the screen
@@ -348,11 +348,11 @@ void Option2(char optionstate)
     char text[20]; // create character array
     sprintf(text, "PAN ANGLE");
     oLCD.print(text, CENTER, 30);          // output text(PAN ANGLE) to screen
-    oLCD.printNumF(pangle, 4, CENTER, 45); // output pan angle number to screen
+    oLCD.printNumI(pangle, CENTER, 45, 3, ' '); // output pan angle number to screen
 
     sprintf(text, "TILT ANGLE");
     oLCD.print(text, CENTER, 60);          // output text(tilt ANGLE) to screen
-    oLCD.printNumF(tangle, 4, CENTER, 75); // output tilt angle number to screen
+    oLCD.printNumI(tangle, CENTER, 75, 3, ' '); // output tilt angle number to screen
 
     sprintf(text, "PRESS <RETURN>");
     oLCD.print(text, CENTER, 90); // output "PRESS <RETURN>" to the screen
