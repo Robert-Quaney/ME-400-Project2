@@ -29,9 +29,9 @@ const int MAX_SO_PIN = 13;
 const int PWM_PIN = 11;
 // optocoupler
 const int OPTO_PIN = 38;
-// tilt and pan
-const int TILT_SERVO_PIN = 35;
+// pan and tilt
 const int PAN_SERVO_PIN = 36;
+const int TILT_SERVO_PIN = 35;
 
 // DAN- add lines 35-40 to finish main document steps 13-15
 // Speaker channel
@@ -42,35 +42,32 @@ const int PWM_CHANNEL = 2;
 const int AUDIO_CHANNEL = 4;
 
 void ShowDisplay(screen val, char optionstate, char keypressed, bool intdisplay);
+
+void Option1();
+void Option2(char optionstate);
+void Option3(char optionstate, char keypressed);
+void Option4(char keypressed);
+void Option5();
+
 Servo pservo;
 Servo tservo;
 
-int pangle = 90; // initializing angle to 90 degrees
-int tangle = 90; // initializing angle to 90 degrees
+int pangle = 90; // angle to 90 degrees
+int tangle = 90; // angle to 90 degrees
 
-// FOR OPTION 3
-    int duty = 0;
-const int PWM_FREQ = 496;
-const int PWM_RESOLUTION = 8;
-const int MOTOR_PIN = 25;
+bool servosAttached = false; // setting servos as unattached
 
-volatile int pulseCount = 0;
-unsigned long lastTime = 0;
-const int PULSES_PER_REV = 1;
+// for three 33 3 3 3
+String dutyInput = ""; // stores typed numbers
+int dutyValue = 0;
 
-void IRAM_ATTR countPulse()
-{
-    pulseCount++; // increment on each rising edge
-}
-
-// FOR OPTION 3
+// for three 33 3 3 3
 
 //
-//  Setup(): Perform initialization
+//  Setup()
 //
 void setup()
 {
-    //  Setup Serial Port
     Serial.begin(115200);
     Dabble.begin("Group3");
     while (!Serial)
@@ -91,6 +88,7 @@ void setup()
     pinMode(MAX_CS_PIN, OUTPUT);
     pinMode(MAX_CLK_PIN, OUTPUT);
     pinMode(MAX_SO_PIN, INPUT);
+    digitalWrite(MAX_CS_PIN, HIGH);
 
     ESP32PWM::allocateTimer(3); // set servo objects to 20 milliseconds
     // MOSFET Pin
@@ -99,37 +97,54 @@ void setup()
     // optocouple pin
     pinMode(OPTO_PIN, INPUT);
 
+    // tilt and pan servo pins
+    pservo.setPeriodHertz(50);
+    tservo.setPeriodHertz(50);
+    pinMode(TILT_SERVO_PIN, OUTPUT);
+    pinMode(PAN_SERVO_PIN, OUTPUT);
+    tservo.attach(TILT_SERVO_PIN);
+    pservo.attach(PAN_SERVO_PIN);
+    tservo.write(90);
+    pservo.write(90);
+    delay(500);
+    tservo.detach();
+    pservo.detach();
     // Initialize IR Communications
     oIR.IRInitialize();
     // Show main menu when Arduino starts
     // for the 1st time or on reset.
     ShowDisplay(SC_MAIN, ' ', ' ', true);
 
-    // FOR OPTION 3
-
-    pservo.setPeriodHertz(50);
-    tservo.setPeriodHertz(50);
-
-    ledcSetup(PWM_CHANNEL, PWM_FREQ, PWM_RESOLUTION);
-    ledcAttachPin(MOTOR_PIN, PWM_CHANNEL);
-
-    pinMode(OPTO_PIN, INPUT);
-    attachInterrupt(digitalPinToInterrupt(OPTO_PIN), countPulse, RISING);
-    lastTime = millis(); // initialize timer
-    // FOR OPTION 3
+    // for three 33 3 3 3
+    pinMode(PWM_PIN, OUTPUT);
+    ledcSetup(PWM_CHANNEL, 496, 8);
+    ledcAttachPin(PWM_PIN, PWM_CHANNEL);
+    // for three 33 3 3 3
 }
 //
 //  Loops(): Perform looping operations
 //
 void loop()
 {
-    unsigned long last_key_processed;
-    // Determine which key was pressed.
-    last_key_processed = oIR.GetKeyPressed();
-    // Return to the main menu any time the
-    // menu key is pressed.
+    unsigned long last_key_processed = oIR.GetKeyPressed();
+
     if (last_key_processed == KEY_MENU)
     {
+        ShowDisplay(SC_MAIN, ' ', ' ', false);
+    }
+
+    // Update gamepad only if in Pan & Tilt screen
+    if (oLCD.SCREEN_STATE == SC_SUB2)
+    {
+        HandleGamePad();
+    }
+
+    // Returning to main menu
+    if (last_key_processed == KEY_RETURN && oLCD.SCREEN_STATE == SC_SUB2)
+    {
+        tservo.detach();
+        pservo.detach();
+        servosAttached = false;
         ShowDisplay(SC_MAIN, ' ', ' ', false);
     }
     else
@@ -142,7 +157,9 @@ void loop()
             }
             else if (last_key_processed == KEY_2)
             {
+
                 ShowDisplay(SC_SUB2, 'A', ' ', false);
+                HandleGamePad();
             }
             else if (last_key_processed == KEY_3)
             {
@@ -170,8 +187,12 @@ void loop()
         }
         else if (oLCD.SCREEN_STATE == SC_SUB2)
         {
+
             if (last_key_processed == KEY_RETURN)
             {
+                tservo.detach(); // detaching servos when leaving option2
+                pservo.detach();
+                servosAttached = false; // setting servos to detached
                 ShowDisplay(SC_MAIN, ' ', ' ', false);
             }
         }
@@ -240,7 +261,86 @@ void ShowDisplay(screen val, char optionstate, char keypressed, bool initdisplay
     else if (val == SC_SUB3)
     {
         Option3(optionstate, keypressed);
+
+        oLCD.LCDInitialize(PORTRAIT, initdisplay);
+
+        // Reset input on entry
+        static bool resetEntry = true;
+        if (resetEntry)
+        {
+            dutyInput = "";
+            dutyValue = 0;
+            resetEntry = false;
+        }
+
+        // Labels
+        oLCD.print("DESIRED DUTY", CENTER, 20);
+        oLCD.print("CYCLE (%)", CENTER, 35);
+
+        // Duty cycle display
+        oLCD.setBackColor(RCB_BLACK);
+        oLCD.print("0", CENTER, 55);
+        oLCD.setBackColor(RCB_PURPLE);
+
+        // Speed display
+        oLCD.print("CALC'D SPEED", CENTER, 80);
+        oLCD.print("0", CENTER, 100);
+
+        // Handle key input inside ShowDisplay
+        int key = oIR.GetKeyPressed();
+
+        if (key >= KEY_0 && key <= KEY_9)
+        {
+            if (dutyInput.length() < 3)
+                dutyInput += oIR.TranslateKey(key);
+
+            dutyValue = dutyInput.toInt();
+
+            // Update duty display
+            oLCD.setBackColor(RCB_BLACK);
+            oLCD.print("   ", CENTER, 55); // clear old value
+            oLCD.print(dutyInput.c_str(), CENTER, 55);
+            oLCD.setBackColor(RCB_PURPLE);
+        }
+        else if (key == KEY_RETURN) // User confirmed the duty cycle
+        {
+            resetEntry = true;
+
+            // Run motor with entered duty cycle
+            ledcWrite(PWM_CHANNEL, map(dutyValue, 0, 100, 0, 255));
+
+            // Continuously update measured speed
+            bool running = true;
+            while (running)
+            {
+                float rpm = measureMotorSpeed(); // You need to implement this function
+                char speedStr[10];
+                sprintf(speedStr, "%.1f", rpm);
+                oLCD.setBackColor(RCB_BLACK);
+                oLCD.print("       ", CENTER, 100); // Clear old speed
+                oLCD.print(speedStr, CENTER, 100);
+                oLCD.setBackColor(RCB_PURPLE);
+
+                int loopKey = oIR.GetKeyPressed();
+                if (loopKey == KEY_MODE) // Mode key stops motor and returns to main menu
+                {
+                    ledcWrite(PWM_CHANNEL, 0); // Stop motor
+                    ShowDisplay(SC_MAIN, ' ', ' ', false);
+                    running = false;
+                }
+                else if (loopKey == KEY_PLAY_PAUSE) // Play/Pause stops motor and clears duty input
+                {
+                    ledcWrite(PWM_CHANNEL, 0); // Stop motor
+                    dutyInput = "";
+                    dutyValue = 0;
+                    ShowDisplay(SC_SUB3, 'A', ' ', true); // Reset duty entry
+                    running = false;
+                }
+                delay(1000); // 1-second delay between updates
+            }
+        }
     }
+
     else if (val == SC_SUB4)
     {
         Option4(keypressed);
@@ -266,129 +366,11 @@ void Option2(char optionstate)
 //  Code for Option3
 //
 
-int dutyToPWM(int duty)
-{
-    if (duty < 0) duty = 0;
-    if (duty > 100) duty = 100;
-    return map(duty, 0, 100, 0, 255); // convert 0-100% to 0-255 PWM
-}
-
-void displayOption3(String duty, float speed)
-{
-    oLCD.LCDInitialize(LANDSCAPE, false);
-    oLCD.print("DESIRED DUTY", 10, 10);
-    oLCD.print("CYCLE (%)", 10, 25);
-    oLCD.print(duty.c_str(), 10, 40);
-
-    oLCD.print("CALC'D SPEED", 10, 70);
-    char buffer[10];
-    sprintf(buffer, "%.1f", speed);
-    oLCD.print(buffer, 10, 85);
-}
-
-void rampMotor(int duty)
-{
-    int target = dutyToPWM(duty);
-
-    // ramp up
-    for (int i = 0; i <= target; i++)
-    {
-        ledcWrite(PWM_CHANNEL, i);
-        delay(10);
-    }
-
-    // ramp down
-    for (int i = target; i >= 0; i--)
-    {
-        ledcWrite(PWM_CHANNEL, i);
-        delay(10);
-    }
-}
-
-float measureSpeed()
-{
-    unsigned long currentTime = millis();
-    float elapsedTime = (currentTime - lastTime) / 1000.0; // seconds
-
-    if (elapsedTime <= 0) return 0;
-
-    // RPM calculation: (pulses / pulses per rev) * 60 / seconds
-    float rpm = (pulseCount / (float)PULSES_PER_REV) / elapsedTime * 60.0;
-
-    // Reset counters for next measurement
-    pulseCount = 0;
-    lastTime = currentTime;
-
-    return rpm;
-}
-
 void Option3(char optionstate, char keypressed)
 {
-    String input = "";        // input buffer
-    int duty = 0;
-    bool enteringDuty = true; // true when typing in duty
-    unsigned long lastUpdate = 0;
-
-    displayOption3("000", 0); // initial screen
-
-    while (true)
-    {
-        unsigned long key = oIR.GetKeyPressed();
-
-        // Exit option
-        if (key == KEY_MENU)
-        {
-            ledcWrite(PWM_CHANNEL, 0);
-            ShowDisplay(SC_MAIN, ' ', ' ', false);
-            return;
-        }
-
-        // Enter duty cycle
-        if (enteringDuty)
-        {
-            if (key >= KEY_0 && key <= KEY_9)
-            {
-                input += String(key - KEY_0);
-                if (input.length() > 3) input = input.substring(0,3); // max 3 digits
-
-                String disp = input;
-                while (disp.length() < 3) disp = "0" + disp;
-                displayOption3(disp, 0);
-            }
-            else if (key == KEY_RETURN && input.length() > 0)
-            {
-                duty = input.toInt();
-                duty = constrain(duty, 0, 100);
-                enteringDuty = false;
-                input = "";
-                lastUpdate = millis();
-            }
-        }
-        else // motor running
-        {
-            int pwmVal = dutyToPWM(duty);
-            ledcWrite(PWM_CHANNEL, pwmVal);
-
-            // update speed every 1 second
-            if (millis() - lastUpdate >= 1000)
-            {
-                float speed = measureSpeed(); // RPM
-                displayOption3(String(duty), speed);
-                lastUpdate = millis();
-            }
-
-            // Re-enter duty cycle
-            if (key == KEY_PLAY) 
-            {
-                ledcWrite(PWM_CHANNEL, 0);
-                enteringDuty = true;
-                displayOption3("000", 0);
-            }
-        }
-
-        delay(20); // non-blocking
-    }
+    oLCD.LCDInitialize(LANDSCAPE, false);
 }
+
 //
 //  Option to Move between pictures and songs.
 //
