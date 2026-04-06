@@ -389,7 +389,7 @@ void Option2(char optionstate)
 
 void Option3(char optionstate, char keypressed)
 {
-    //ledcWrite(PWM_CHANNEL, 0);
+    ledcWrite(PWM_CHANNEL, 0);
     if (optionstate == 'C') // user pressed return after entering duty cycle
     {
         if (aval.length() > 0)
@@ -426,7 +426,7 @@ void Tone_ISR()
 float measureSpeed()
 {
     unsigned long currentTime = millis();
-    float elapsedTime = (currentTime - lastTime) / 1000.0;
+    float elapsedTime = (currentTime - lastTime) / 100.0;
 
     if (elapsedTime <= 0)
         return 0.0;
