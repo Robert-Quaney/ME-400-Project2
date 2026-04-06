@@ -44,7 +44,6 @@ const int OPTO_PIN = 38;
 const int TILT_SERVO_PIN = 35;
 const int PAN_SERVO_PIN = 36;
 
-// DAN- add lines 35-40 to finish main document steps 13-15
 // Speaker channel
 const int SPK_CHANNEL = 1;
 // PWM channel
@@ -265,6 +264,7 @@ void loop()
                 ShowDisplay(SC_MAIN, ' ', ' ', false);
             }
         }
+        //code from Excersie 5 
         else if (oLCD.SCREEN_STATE == SC_SUB3) // WARNINGS
         {
             if (last_key_processed == KEY_MENU)
@@ -295,6 +295,7 @@ void loop()
                 else if ((oLCD.OPTION_STATE == 'C'))
                 {
                     // display PWM frequency and value
+                    //Does not do anything, Dont want to break my code so its sitting here
                     oLCD.printNumF(pwmfrequency, 4, CENTER, 80);
                 }
             }
@@ -328,6 +329,7 @@ void loop()
     }
     delay(100);
     // 3
+    // calculate the RPM constantly to be called when in option state C
     static unsigned long lastUpdate = 0;
     if (motorRunning && millis() - lastUpdate >= 1000)
     {
@@ -353,6 +355,7 @@ void ShowDisplay(screen val, char optionstate, char keypressed, bool initdisplay
 
     if (val == SC_MAIN)
     {
+        //initial display 
         oLCD.LCDInitialize(LANDSCAPE, initdisplay);
         sprintf(text, "SELECT OPTION");
         oLCD.print(text, 10, 10);
@@ -378,6 +381,7 @@ void ShowDisplay(screen val, char optionstate, char keypressed, bool initdisplay
     else if (val == SC_SUB3)
     {
         Option3(oLCD.OPTION_STATE, ' ');
+        //CODE from excercise 5 reused, Changes between state A,B, and C to accept an input that will then run the motor at that speed
         if (optionstate == 'A')
         {
             aval = "";
@@ -402,11 +406,6 @@ void ShowDisplay(screen val, char optionstate, char keypressed, bool initdisplay
             oLCD.printNumI(aval.toInt(), CENTER, 40, 3, ' ');
             oLCD.setBackColor(RCB_PURPLE);
         }
-        // else if (optionstate == 'C')
-        //{
-        // test if in state C
-        // oLCD.print(F("C"), CENTER, 100);
-        //}
     }
     else if (val == SC_SUB4)
     {
@@ -443,8 +442,6 @@ bool playSong()
     // arrays at the top
 
     int N = min(sizeof(song) / sizeof(song[0]), sizeof(note) / sizeof(note[0])); // # elements in array song is 1439 and notes is 1414, use size of operator
-
-    // NEEDS MORE HELP TO GET SKIPPING RIGHT
     for (int i = 0; i < N; i++)
     {
         if ((i - 6) % 7 == 0 || (i - 6) % 7 == 1)
@@ -654,6 +651,7 @@ void Option3(char optionstate, char keypressed)
 
 void IRAM_ATTR PWM_ISR()
 {
+    //increase PWM count
     pwmcount++;
 }
 
@@ -665,6 +663,7 @@ void Tone_ISR()
 
 float measureSpeed()
 {
+    //when called measures the speed of Motor and converts it to RPM
     unsigned long currentTime = millis();
     float elapsedTime = (currentTime - lastTime) / 100.0;
 
