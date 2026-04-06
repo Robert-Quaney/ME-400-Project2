@@ -3,7 +3,7 @@
 #include <ESP32Servo.h>
 #include "httphelper.h"
 #include <DabbleESP32.h>
-#include'<WiFi.h'
+#include <WiFi.h>
 //
 //  Create an instance of the lcdhelper class named oLCD
 //
@@ -735,7 +735,7 @@ double ReadThermoC()
         digitalWrite(MAX_CLK_PIN, LOW); // clock pin to LOW (clock shows when the sensor presents the next bit)
         delayMicroseconds(10);
 
-        if (digitalRead(MAX_SO_PIN) == HIGH) // SO pin check if it is HIGH (HIGH means bit = 1, !HIGH then bit = 0)
+        if (digitalRead(MAX_SO_PIN) == HIGH) // SO pin check if it is HIGH (HIGH means bit = 1, not HIGH then bit = 0)
         {
             data = data + (uint16_t)pow(2, i); // bit value is 1, then it adds the value to the data
         }
@@ -761,7 +761,7 @@ oLCD.printNumF(tempC, 2, 70, 45); //prints new temp to 2 decimal places
 void ReadCord(double &latt, double &longitude)
 {
 longitude = Sensor.getGPSlongitude();
-latt = Sensor.getGPSlatitude();
+latt = Sensor.getGPSLatitude();
 }
 
 void updateCord(double latt, double longitude)
