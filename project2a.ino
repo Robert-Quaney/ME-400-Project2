@@ -766,7 +766,7 @@ void Option4(char keypressed)
             ledcDetachPin(SPEAKER_PIN);
 
             return;
-        }
+        }else
         // delay(500);
 
         button = 0;
