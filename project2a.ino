@@ -3,6 +3,7 @@
 #include <ESP32Servo.h>
 #include "httphelper.h"
 #include <DabbleESP32.h>
+#include'<WiFi.h'
 //
 //  Create an instance of the lcdhelper class named oLCD
 //
