@@ -1,0 +1,434 @@
+#include "lcdhelperv2.h"
+#include "irhelper.h"
+#include <ESP32Servo.h>
+#include "httphelper.h"
+#include <DabbleESP32.h>
+
+
+//
+//  Create an instance of the lcdhelper class named oLCD
+//
+lcdhelper oLCD(ILI9163_4L, 3, 2, 9, 10, 7);
+
+//
+//  Create an instance of irhelper class named oIR.
+//
+irhelper oIR;
+
+//
+//  Define function prototypes.
+//
+void ShowDisplay(screen val, char optionstate, char keypressed, bool initdisplay);
+
+void Option1();
+void Option2(char optionstate);
+void Option3(char optionstate, char keypressed);
+void Option4(char keypressed);
+void Option5();
+
+double ReadThermoC();
+void sensorReadings();
+void updateTemp(double tempC);
+void updateCord(double latt, double longitude);
+void ReadCord(double &latt, double &longitude);
+
+//
+//  Global pin definitions
+//
+
+// LED pins from Option 1 hardware
+const int LED1 = 19;
+const int LED2 = 20;
+const int LED3 = 21;
+const int LED4 = 22;
+
+// Switch pins
+const int SW1_PIN = 18;
+const int SW2_PIN = 17;
+const int SW3_PIN = 16;
+const int SW4_PIN = 15;
+
+// Speaker pin
+const int SPEAKER_PIN = 8;
+
+// MAX6675 pins
+const int MAX_CS_PIN = 10;
+const int MAX_CLK_PIN = 12;
+const int MAX_SO_PIN = 13;
+
+// MOSFET pin
+const int PWM_PIN = 11;
+
+// Optocoupler pin
+const int OPTO_PIN = 38;
+
+// Servo pins
+const int TILT_SERVO_PIN = 35;
+const int PAN_SERVO_PIN = 36;
+
+// Channels
+const int SPK_CHANNEL = 1;
+const int PWM_CHANNEL = 2;
+const int AUDIO_CHANNEL = 4;
+
+Servo pservo;
+Servo tservo;
+
+int pangle = 90;
+int tangle = 90;
+bool servosAttached = false;
+
+//
+//  Setup()
+//
+void setup()
+{
+    Serial.begin(115200);
+    Dabble.begin("Group3");
+
+    while (!Serial)
+    {
+        // wait for serial to start
+    }
+
+    // LED pins
+    pinMode(LED1, OUTPUT);
+    pinMode(LED2, OUTPUT);
+    pinMode(LED3, OUTPUT);
+    pinMode(LED4, OUTPUT);
+
+    // Switch pins
+    pinMode(SW1_PIN, INPUT_PULLUP);
+    pinMode(SW2_PIN, INPUT_PULLUP);
+    pinMode(SW3_PIN, INPUT_PULLUP);
+    pinMode(SW4_PIN, INPUT_PULLUP);
+
+    // Speaker pin
+    pinMode(SPEAKER_PIN, OUTPUT);
+
+    // MAX6675 pins
+    pinMode(MAX_CS_PIN, OUTPUT);
+    pinMode(MAX_CLK_PIN, OUTPUT);
+    pinMode(MAX_SO_PIN, INPUT);
+    digitalWrite(MAX_CS_PIN, HIGH);
+
+    // PWM pin
+    pinMode(PWM_PIN, OUTPUT);
+
+    // Optocoupler pin
+    pinMode(OPTO_PIN, INPUT);
+
+    // Servo setup
+    ESP32PWM::allocateTimer(3);
+    pservo.setPeriodHertz(50);
+    tservo.setPeriodHertz(50);
+
+    pinMode(TILT_SERVO_PIN, OUTPUT);
+    pinMode(PAN_SERVO_PIN, OUTPUT);
+
+    tservo.attach(TILT_SERVO_PIN);
+    pservo.attach(PAN_SERVO_PIN);
+
+    tservo.write(90);
+    pservo.write(90);
+
+    delay(500);
+
+    tservo.detach();
+    pservo.detach();
+
+    // Speaker setup
+    ledcSetup(SPK_CHANNEL, 496, 8);
+    ledcAttachPin(SPEAKER_PIN, SPK_CHANNEL);
+
+    // Initialize IR
+    oIR.IRInitialize();
+
+    // Show main menu
+    ShowDisplay(SC_MAIN, ' ', ' ', true);
+}
+
+//
+//  loop()
+//
+void loop()
+{
+    unsigned long last_key_processed;
+
+    last_key_processed = oIR.GetKeyPressed();
+
+    if (last_key_processed == KEY_MENU)
+    {
+        ShowDisplay(SC_MAIN, ' ', ' ', false);
+    }
+    else
+    {
+        if (oLCD.SCREEN_STATE == SC_MAIN)
+        {
+            if (last_key_processed == KEY_1)
+            {
+                ShowDisplay(SC_SUB1, ' ', ' ', false);
+            }
+            else if (last_key_processed == KEY_2)
+            {
+                ShowDisplay(SC_SUB2, 'A', ' ', false);
+            }
+            else if (last_key_processed == KEY_3)
+            {
+                ShowDisplay(SC_SUB3, 'A', ' ', false);
+            }
+            else if (last_key_processed == KEY_4)
+            {
+                ShowDisplay(SC_SUB4, ' ', ' ', false);
+            }
+            else if (last_key_processed == KEY_5)
+            {
+                ShowDisplay(SC_SUB5, ' ', ' ', false);
+            }
+            else if (last_key_processed == KEY_RETURN)
+            {
+                ShowDisplay(SC_MAIN, ' ', ' ', false);
+            }
+        }
+        else if (oLCD.SCREEN_STATE == SC_SUB1)
+        {
+            if (last_key_processed == KEY_RETURN)
+            {
+                ShowDisplay(SC_MAIN, ' ', ' ', false);
+            }
+        }
+        else if (oLCD.SCREEN_STATE == SC_SUB2)
+        {
+            if (last_key_processed == KEY_RETURN)
+            {
+                ShowDisplay(SC_MAIN, ' ', ' ', false);
+            }
+        }
+        else if (oLCD.SCREEN_STATE == SC_SUB3)
+        {
+            if (last_key_processed == KEY_RETURN)
+            {
+                ShowDisplay(SC_MAIN, ' ', ' ', false);
+            }
+        }
+        else if (oLCD.SCREEN_STATE == SC_SUB4)
+        {
+            if (last_key_processed == KEY_RETURN)
+            {
+                ShowDisplay(SC_MAIN, ' ', ' ', false);
+            }
+        }
+        else if (oLCD.SCREEN_STATE == SC_SUB5)
+        {
+            if (last_key_processed == KEY_RETURN)
+            {
+                ShowDisplay(SC_MAIN, ' ', ' ', false);
+            }
+        }
+    }
+
+    delay(100);
+}
+
+// *************************************************************************************
+// BEGIN: FUNCTION DEFINITIONS
+// *************************************************************************************
+
+//
+//  Method to display menus on TFT display
+//
+void ShowDisplay(screen val, char optionstate, char keypressed, bool initdisplay)
+{
+    oLCD.SCREEN_STATE = val;
+    oLCD.OPTION_STATE = optionstate;
+
+    char text[20];
+
+    if (val == SC_MAIN)
+    {
+        oLCD.LCDInitialize(LANDSCAPE, initdisplay);
+
+        sprintf(text, "SELECT OPTION");
+        oLCD.print(text, 10, 10);
+
+        sprintf(text, "1. Mystery Music");
+        oLCD.print(text, 10, 25);
+
+        sprintf(text, "2. Pan and Tilt");
+        oLCD.print(text, 10, 40);
+
+        sprintf(text, "3. Run the Motor");
+        oLCD.print(text, 10, 55);
+
+        sprintf(text, "4. Stream Audio");
+        oLCD.print(text, 10, 70);
+
+        sprintf(text, "5. Query Sensors");
+        oLCD.print(text, 10, 85);
+    }
+    else if (val == SC_SUB1)
+    {
+        Option1();
+    }
+    else if (val == SC_SUB2)
+    {
+        Option2(optionstate);
+    }
+    else if (val == SC_SUB3)
+    {
+        Option3(optionstate, keypressed);
+    }
+    else if (val == SC_SUB4)
+    {
+        Option4(keypressed);
+    }
+    else if (val == SC_SUB5)
+    {
+        Option5();
+    }
+}
+
+//********************************************************************
+//  BEGIN OPTION CODE
+//********************************************************************
+
+void Option1()
+{
+    oLCD.LCDInitialize(LANDSCAPE, false);
+    oLCD.print("OPTION 1 TEST OFF", 10, 10);
+}
+
+void Option2(char optionstate)
+{
+    oLCD.LCDInitialize(LANDSCAPE, false);
+    oLCD.print("OPTION 2 TEST OFF", 10, 10);
+}
+
+void Option3(char optionstate, char keypressed)
+{
+    oLCD.LCDInitialize(LANDSCAPE, false);
+    oLCD.print("OPTION 3 TEST OFF", 10, 10);
+}
+
+void Option4(char keypressed)
+{
+    oLCD.LCDInitialize(LANDSCAPE, false);
+    oLCD.print("OPTION 4 TEST OFF", 10, 10);
+}
+
+// option 5 helpers
+void sensorReadings()
+{
+    char text[20];
+
+    oLCD.LCDInitialize(LANDSCAPE, false);
+
+    sprintf(text, "SENSOR");
+    oLCD.print(text, 10, 10);
+
+    sprintf(text, "READINGS");
+    oLCD.print(text, 10, 25);
+
+    sprintf(text, "TEMP:");
+    oLCD.print(text, 10, 45);
+
+    sprintf(text, "LATT:");
+    oLCD.print(text, 10, 65);
+
+    sprintf(text, "LONG:");
+    oLCD.print(text, 10, 85);
+}
+
+double ReadThermoC()
+{
+    uint16_t data = 0;
+
+    digitalWrite(MAX_CS_PIN, LOW);
+    delayMicroseconds(10);
+
+    for (int i = 15; i >= 0; i--)
+    {
+        digitalWrite(MAX_CLK_PIN, LOW);
+        delayMicroseconds(10);
+
+        if (digitalRead(MAX_SO_PIN) == HIGH)
+{
+    uint16_t value = 1;
+
+    for (int j = 0; j < i; j++)
+    {
+        value = value * 2;
+    }
+
+    data = data + value;
+}
+
+        digitalWrite(MAX_CLK_PIN, HIGH);
+        delayMicroseconds(10);
+    }
+
+    digitalWrite(MAX_CS_PIN, HIGH);
+
+    data = data / 8;
+    data = data % 4096;
+
+    return data * 0.25;
+}
+
+void updateTemp(double tempC)
+{
+    oLCD.print("        ", 70, 45);
+    oLCD.printNumF(tempC, 2, 70, 45);
+}
+
+void ReadCord(double &latt, double &longitude)
+{
+    longitude = Sensor.getGPSlongitude();
+    latt = Sensor.getGPSLatitude();
+}
+
+void updateCord(double latt, double longitude)
+{
+    oLCD.print("            ", 70, 65);
+    oLCD.printNumF(latt, 2, 70, 65);
+
+    oLCD.print("            ", 70, 85);
+    oLCD.printNumF(longitude, 2, 70, 85);
+}
+
+void Option5()
+{
+    double tempC = 0.0;
+    double latt = 0.0;
+    double longitude = 0.0;
+    unsigned long button = KEY_NONE;
+
+    sensorReadings();
+
+    while (button != KEY_RETURN)
+    {
+        Dabble.processInput();
+
+        tempC = ReadThermoC();
+        ReadCord(latt, longitude);
+
+        updateTemp(tempC);
+        updateCord(latt, longitude);
+
+        Serial.print("Temp C: ");
+        Serial.println(tempC);
+
+        Serial.print("Lat: ");
+        Serial.println(latt);
+
+        Serial.print("Long: ");
+        Serial.println(longitude);
+
+        button = oIR.GetKeyPressed();
+        delay(300);
+    }
+}
+
+//********************************************************************
+//  END OPTION CODE
+//********************************************************************
