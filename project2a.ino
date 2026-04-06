@@ -685,23 +685,20 @@ float measureSpeed()
 //
 
 // OPTION 4 START
-void GetFileInfo(String picFiles[], String audioFiles[], int rowcount)
-{
-    // 5a. display to the screen
+void GetFileInfo(String picFiles[], String audioFiles[], int rowcount){
+    //5a. display to the screen
     oLCD.fillScreen(RCB_PURPLE);
     oLCD.print("CONNECTING", CENTER, 10);
     oLCD.print("TO WIFI", CENTER, 30);
     oLCD.print(".....", CENTER, 50);
 
-    // 5b. HHTP instance
+    //5b. HHTP instance
     HTTPClient m_http;
 
-    // 5c. connect to network with timeout
-    if (objHTTP.connect(30) == true)
-    {
+    //5c. connect to network with timeout
+    if(objHTTP.connect(30) == true){
         // 5d. call get url
-        if (objHTTP.getURL(m_http, "https://intranet.mne.ksu.edu/static/ME400/images.php", 3000))
-        {
+        if(objHTTP.getURL(m_http,"https://intranet.mne.ksu.edu/static/ME400/images.php" , 3000)){
             // call get base files
             GetBaseFiles(m_http, picFiles, audioFiles, rowcount);
 
@@ -715,26 +712,24 @@ void GetFileInfo(String picFiles[], String audioFiles[], int rowcount)
 //
 
 void Option4(char keypressed)
-{
+{   
     oLCD.LCDInitialize(LANDSCAPE, false);
     currentIndex = 0;
 
     while (true)
-    { // 6a. image displayed on tft
+    {   // 6a. image displayed on tft
         MysteryPic(picFiles[currentIndex]);
 
-        while (oIR.GetKeyPressed() != 0)
-        {
+        while (oIR.GetKeyPressed() != 0) {
+            
         }
-        // 6b. plays audio with image
+        //6b. plays audio with image
         int button = MysteryAudio(audioFiles[currentIndex]);
 
         // controls for the remote keys
-        if (button == 0)
-        {
+        if(button == 0){
             button = oIR.GetKeyPressed();
-            while (button == 0)
-            {
+            while (button == 0){
                 button = oIR.GetKeyPressed();
                 delay(50);
             }
@@ -742,9 +737,10 @@ void Option4(char keypressed)
 
         // 6c. Key Forward >>
         if (button == KEY_FORWARD)
-        {
-            sigmaDeltaWrite(AUDIO_CHANNEL, 0);
+        {   sigmaDeltaWrite(AUDIO_CHANNEL, 0);
             ledcDetachPin(SPEAKER_PIN);
+        
+
 
             currentIndex++;
             if (currentIndex >= 16)
@@ -753,9 +749,9 @@ void Option4(char keypressed)
 
         // 6d. Key Reverse <<
         else if (button == KEY_BACK)
-        {
-            sigmaDeltaWrite(AUDIO_CHANNEL, 0);
+        {   sigmaDeltaWrite(AUDIO_CHANNEL, 0);
             ledcDetachPin(SPEAKER_PIN);
+            
 
             currentIndex--;
             if (currentIndex < 0)
@@ -764,93 +760,93 @@ void Option4(char keypressed)
 
         // return key exits the function
         else if (button == KEY_RETURN)
-        {
-            sigmaDeltaWrite(AUDIO_CHANNEL, 0);
+        {   sigmaDeltaWrite(AUDIO_CHANNEL, 0);
             ledcDetachPin(SPEAKER_PIN);
+            
 
             return;
         }
-        // delay(500);
-
+        //delay(500);
+        
         button = 0;
     }
 }
 
-// Myster Pic implementation, ****Not sure about file name
-void MysteryPic(String filename)
-{
-    // color background screen
+//Myster Pic implementation, ****Not sure about file name
+void MysteryPic(String filename){
+    //color background screen
     oLCD.fillScreen(RCB_PURPLE);
-    // 1. create instance http
+    //1. create instance http 
     HTTPClient m_http;
 
-    // 2. create unsigned array 2560
+    //2. create unsigned array 2560
     unsigned char buff[2560] = {0};
 
-    // 3. connect to network
-    if (objHTTP.connect(30) == true)
-    {
-        // 4. call get url method
-        if (objHTTP.getURL(m_http, "https://intranet.mne.ksu.edu/static/ME400/" + filename, 3000))
-        {
-            // 5. get file image data
+    //3. connect to network
+    if(objHTTP.connect(30) == true){
+        //4. call get url method
+        if(objHTTP.getURL(m_http,"https://intranet.mne.ksu.edu/static/ME400/" + filename, 3000)){
+            //5. get file image data
             String OriginalData = m_http.getString();
+            
 
-            // 6. remove header data
+            //6. remove header data
             int inst128 = OriginalData.indexOf("128");
-            // finds the first instance after 128 and store all that data in a string
+            //finds the first instance after 128 and store all that data in a string
             int ImageStart = OriginalData.indexOf('\n', inst128);
             String ImageData = OriginalData.substring(ImageStart + 1);
-
+            
             Serial.println(ImageStart);
 
-            // 7. loop through data to reorder
-            for (int i = 0; i < 2560; i++)
-            {
+            //7. loop through data to reorder
+            for(int i = 0; i < 2560; i++){
                 unsigned char OriginalOrder = (unsigned char)ImageData.charAt(i);
                 unsigned char reversedByte = 0;
 
-                // reorder bits
-                for (int j = 0; j < 8; j++)
-                {
+                //reorder bits
+                for(int j = 0; j < 8; j++){
                     int OriginalBit = bitRead(OriginalOrder, j);
                     bitWrite(reversedByte, 7 - j, OriginalBit);
+
                 }
-                buff[i] = reversedByte;
+                buff[i] = reversedByte; 
             }
 
-            // 8. display image to screen.
+            //8. display image to screen.  
             oLCD.drawXBitmap(0, 0, buff, 160, 128, RCB_WHITE);
 
-            // 9. Call end function
+            //9. Call end function
             m_http.end();
+
         }
-        // 10. disconnect
+        //10. disconnect
         objHTTP.disconnect();
+
+
     }
     // 11. return calling routine
+
+
 }
 
-// Mystery Audio Implementation
-int MysteryAudio(String filename)
-{
-    // 1.
+
+//Mystery Audio Implementation
+int MysteryAudio(String filename){
+    //1.
     HTTPClient m_http;
 
-    // 2. detatch speaker pin
+    //2. detatch speaker pin
     ledcDetachPin(SPEAKER_PIN);
 
-    // 3. Store pins and channel
+    //3. Store pins and channel 
     sigmaDeltaSetup(SPEAKER_PIN, AUDIO_CHANNEL, 2e6);
     sigmaDeltaWrite(AUDIO_CHANNEL, 0);
 
-    // 4 connect to network
-    if (objHTTP.connect(30) == true)
-    {
-        // 5. call get url
-        if (objHTTP.getURL(m_http, "https://intranet.mne.ksu.edu/static/ME400/" + filename, 3000))
-        {
-            // 6. copied in code
+    //4 connect to network
+    if(objHTTP.connect(30) == true){
+        //5. call get url
+        if(objHTTP.getURL(m_http, "https://intranet.mne.ksu.edu/static/ME400/" + filename, 3000)){
+            //6. copied in code
             circle_init(); // Initialize the circle (ring) buffer
             // Create a tcp stream.
             WiFiClient *stream = m_http.getStreamPtr();
@@ -860,53 +856,51 @@ int MysteryAudio(String filename)
             while (m_http.connected() && (len > 0 || len == -1))
             {
                 int irKey = oIR.GetKeyPressed();
-                if (irKey != 0)
-                {
+                if (irKey != 0) { 
                     sigmaDeltaWrite(AUDIO_CHANNEL, 0);
                     ledcDetachPin(SPEAKER_PIN);
-
+        
                     m_http.end();
                     objHTTP.disconnect();
                     return irKey;
                 }
 
-                // Number of bytes of data currently available for download.
-                size_t size = stream->available();
-                // If the size is greater than 0, then download the content.
-                if (size)
-                {
-                    uint8_t buff[200];
-                    int bytes_to_insert = min(sizeof(buff), size);
-                    int c = stream->readBytes(buff, bytes_to_insert);
+            // Number of bytes of data currently available for download.
+            size_t size = stream->available();
+            // If the size is greater than 0, then download the content.
+            if (size)
+            {
+            uint8_t buff[200];
+            int bytes_to_insert = min(sizeof(buff), size);
+            int c = stream->readBytes(buff, bytes_to_insert);
 
-                    // 7. create loop to iterate elements and delay
-                    for (int i = 0; i < c; i++)
-                    {
-                        while (circle_put(buff[i]) == false)
-                        {
-                            delay(1);
-                        }
-                    }
-                    // 8. pushing button stops streaming.
-                    if (digitalRead(18) == LOW || digitalRead(17) == LOW || digitalRead(16) == LOW || digitalRead(15) == LOW)
-                    {
-                        break;
-                    }
-
-                    if (len > 0)
-                    {
-                        len -= c;
-                    }
+            //7. create loop to iterate elements and delay
+            for(int i = 0; i < c; i++){
+                while(circle_put(buff[i]) == false){
+                    delay(1);
+                
                 }
             }
+            //8. pushing button stops streaming. 
+            if(digitalRead(18) == LOW || digitalRead(17) == LOW || digitalRead(16) == LOW || digitalRead(15) == LOW){
+                m_http.end();
+                objHTTP.disconnect();
+                return KEY_RETURN;
+            }
+
+            if (len > 0) { len -= c;}
+            }
+
+            }
+            
         }
-        // 9. tirn off audio
+        //9. tirn off audio
         sigmaDeltaWrite(AUDIO_CHANNEL, 0);
 
         // 10. end method
         m_http.end();
     }
-    // 11. disconnect
+    //11. disconnect
     objHTTP.disconnect();
     return 0;
 
