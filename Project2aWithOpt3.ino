@@ -58,14 +58,14 @@ bool servosAttached = false; // setting servos as unattached
 
 // for three 33 3 3 3
 void IRAM_ATTR PWM_ISR();
-const int interruptPinPWM = 37; // Use your optocoupler pin (same as OPTO_PIN)
+const int interruptPinPWM = 37; 
 
 volatile unsigned long pwmcount = 0;
 volatile unsigned long tonecount = 0;
 
 double pwmfrequency = 0.0;
 
-unsigned long lastTime = 0;
+unsigned long lastTime = millis();
 
 const int pulsesPerRevolution = 20;
 static String aval = "";
@@ -278,11 +278,13 @@ void loop()
         }
         delay(100);
     }
+static unsigned long lastUpdate =0; 
 
-    if (motorRunning)
+    if (motorRunning && millis()- lastUpdate >= 1000)
     {
         float rpm = measureSpeed();
         oLCD.printNumF(rpm, 1, CENTER, 80);
+        lastUpdate = millis();
     }
 }
 
