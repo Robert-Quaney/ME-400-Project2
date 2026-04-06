@@ -571,7 +571,11 @@ void Option4(char keypressed)
 
         // 6c. Key Forward >>
         if (button == KEY_FORWARD)
-        {
+        {   sigmaDeltaWrite(AUDIO_CHANNEL, 0);
+            ledcDetachPin(SPEAKER_PIN);
+        
+
+
             currentIndex++;
             if (currentIndex >= 16)
                 currentIndex = 0;
@@ -579,15 +583,21 @@ void Option4(char keypressed)
 
         // 6d. Key Reverse <<
         else if (button == KEY_BACK)
-        {
+        {   sigmaDeltaWrite(AUDIO_CHANNEL, 0);
+            ledcDetachPin(SPEAKER_PIN);
+            
+
             currentIndex--;
             if (currentIndex < 0)
                 currentIndex = 15;
         }
 
-        // Exit 
+        // return key exits the function
         else if (button == KEY_RETURN)
-        {
+        {   sigmaDeltaWrite(AUDIO_CHANNEL, 0);
+            ledcDetachPin(SPEAKER_PIN);
+            
+
             return;
         }
         //delay(500);
@@ -681,6 +691,11 @@ int MysteryAudio(String filename){
             {
                 int irKey = oIR.GetKeyPressed();
                 if (irKey != 0) { 
+                    sigmaDeltaWrite(AUDIO_CHANNEL, 0);
+                    ledcDetachPin(SPEAKER_PIN);
+        
+
+
                     m_http.end();
                     objHTTP.disconnect();
                     return irKey;
@@ -724,7 +739,6 @@ int MysteryAudio(String filename){
     return 0;
 
 } // END OPTION 4
-
 
 // option 5 helpers 
 // screen update readings
