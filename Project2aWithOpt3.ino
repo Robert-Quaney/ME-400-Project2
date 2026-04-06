@@ -58,15 +58,14 @@ bool servosAttached = false; // setting servos as unattached
 
 // for three 33 3 3 3
 void IRAM_ATTR PWM_ISR();
-const int interruptPinPWM = 37;   // Use your optocoupler pin (same as OPTO_PIN)
+const int interruptPinPWM = 37; // Use your optocoupler pin (same as OPTO_PIN)
 
 volatile unsigned long pwmcount = 0;
 volatile unsigned long tonecount = 0;
 
-unsigned long starttime = 0;
-unsigned long lastSpeedUpdate = 0;
-
 double pwmfrequency = 0.0;
+
+unsigned long lastTime = 0;
 
 const int pulsesPerRevolution = 20;
 static String aval = "";
@@ -79,7 +78,6 @@ const int pwmResolution = 8;
 
 bool motorRunning = false;
 double desiredDuty = 0.0; // duty cycle entered by user (0–100)
-
 
 // for three 33 3 3 3
 
@@ -144,7 +142,7 @@ void setup()
     ledcWrite(PWM_CHANNEL, 0);
 
     pinMode(interruptPinPWM, INPUT_PULLUP);
-    starttime = millis();
+
     // for three 33 3 3 3
 }
 //
@@ -152,7 +150,6 @@ void setup()
 //
 void loop()
 {
-
     unsigned long last_key_processed = oIR.GetKeyPressed();
 
     if (last_key_processed == KEY_MENU)
@@ -282,6 +279,11 @@ void loop()
         delay(100);
     }
 
+    if (motorRunning)
+    {
+        float rpm = measureSpeed();
+        oLCD.printNumF(rpm, 1, CENTER, 80);
+    }
 }
 
 // *************************************************************************************
@@ -402,7 +404,7 @@ void Option3(char optionstate, char keypressed)
             ledcWrite(PWM_CHANNEL, pwmVal);
 
             pwmcount = 0;
-            lastSpeedUpdate = millis(); 
+
             attachInterrupt(digitalPinToInterrupt(interruptPinPWM), PWM_ISR, FALLING);
             motorRunning = true;
         }
@@ -418,6 +420,22 @@ void Tone_ISR()
 {
     // increase tone count
     tonecount++;
+}
+
+float measureSpeed()
+{
+    unsigned long currentTime = millis();
+    float elapsedTime = (currentTime - lastTime) / 1000.0;
+
+    if (elapsedTime <= 0)
+        return 0.0;
+
+    float rpm = (pwmcount / pulsesPerRevolution) * 60.0 / elapsedTime;
+
+    pwmcount = 0;
+    lastTime = currentTime;
+
+    return rpm;
 }
 
 //
