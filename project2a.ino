@@ -546,51 +546,60 @@ void GetFileInfo(String picFiles[], String audioFiles[], int rowcount){
 //
 
 void Option4(char keypressed)
-{
+{   
     oLCD.LCDInitialize(LANDSCAPE, false);
     currentIndex = 0;
 
-    MysteryPic(picFiles[currentIndex]);
-    MysteryAudio(audioFiles[currentIndex]);
-
     while (true)
-    {
+    {   // 6a. image displayed on tft
+        MysteryPic(picFiles[currentIndex]);
 
-        int button = oIR.GetKeyPressed();
+        while (oIR.GetKeyPressed() != 0) {
+            
+        }
+        //6b. plays audio with image
+        int button = MysteryAudio(audioFiles[currentIndex]);
 
-        // Forward >>
+        // controls for the remote keys
+        if(button == 0){
+            button = oIR.GetKeyPressed();
+            while (button == 0){
+                button = oIR.GetKeyPressed();
+                delay(50);
+            }
+        }
+
+        // 6c. Key Forward >>
         if (button == KEY_FORWARD)
         {
             currentIndex++;
             if (currentIndex >= 16)
                 currentIndex = 0;
-
-            MysteryPic(picFiles[currentIndex]);
-            MysteryAudio(audioFiles[currentIndex]);
         }
 
-        // Reverse <<
-        if (button == KEY_BACK)
+        // 6d. Key Reverse <<
+        else if (button == KEY_BACK)
         {
             currentIndex--;
             if (currentIndex < 0)
                 currentIndex = 15;
-
-            MysteryPic(picFiles[currentIndex]);
-            MysteryAudio(audioFiles[currentIndex]);
         }
 
-        // Exit
-        if (button == KEY_MENU)
+        // Exit 
+        else if (button == KEY_RETURN)
         {
             return;
         }
-        delay(50);
+        //delay(500);
+        
+        button = 0;
     }
 }
 
 //Myster Pic implementation, ****Not sure about file name
 void MysteryPic(String filename){
+    //color background screen
+    oLCD.fillScreen(RCB_PURPLE);
     //1. create instance http 
     HTTPClient m_http;
 
@@ -603,12 +612,15 @@ void MysteryPic(String filename){
         if(objHTTP.getURL(m_http,"https://intranet.mne.ksu.edu/static/ME400/" + filename, 3000)){
             //5. get file image data
             String OriginalData = m_http.getString();
+            
 
             //6. remove header data
             int inst128 = OriginalData.indexOf("128");
             //finds the first instance after 128 and store all that data in a string
-            int ImageStart = OriginalData.indexOf('\n', 128);
+            int ImageStart = OriginalData.indexOf('\n', inst128);
             String ImageData = OriginalData.substring(ImageStart + 1);
+            
+            Serial.println(ImageStart);
 
             //7. loop through data to reorder
             for(int i = 0; i < 2560; i++){
@@ -643,7 +655,7 @@ void MysteryPic(String filename){
 
 
 //Mystery Audio Implementation
-void MysteryAudio(String filename){
+int MysteryAudio(String filename){
     //1.
     HTTPClient m_http;
 
@@ -667,6 +679,13 @@ void MysteryAudio(String filename){
             // If the connection is open and the file length is valid, then continue.
             while (m_http.connected() && (len > 0 || len == -1))
             {
+                int irKey = oIR.GetKeyPressed();
+                if (irKey != 0) { 
+                    m_http.end();
+                    objHTTP.disconnect();
+                    return irKey;
+                }
+
             // Number of bytes of data currently available for download.
             size_t size = stream->available();
             // If the size is greater than 0, then download the content.
@@ -679,7 +698,7 @@ void MysteryAudio(String filename){
             //7. create loop to iterate elements and delay
             for(int i = 0; i < c; i++){
                 while(circle_put(buff[i]) == false){
-                    delay(10);
+                    delay(1);
                 
                 }
             }
@@ -702,6 +721,7 @@ void MysteryAudio(String filename){
     }
     //11. disconnect
     objHTTP.disconnect();
+    return 0;
 
 } // END OPTION 4
 
