@@ -20,10 +20,10 @@ irhelper oIR;
 //  Define function prototypes.
 //
 //led pins defined for option 1
-const int LED1 = 19;
-const int LED2 = 20;
-const int LED3 = 21;
-const int LED4 = 22;
+const int LED1 = 4;
+const int LED2 = 5;
+const int LED3 = 6;
+const int LED4 = 7;
 
 const int SW1_PIN = 18;
 const int SW2_PIN = 17;
@@ -373,8 +373,9 @@ bool playSong(){
         digitalWrite(LED4, LOW);
 
 
-        // exits song when sw4 pressed
-        if(digitalRead(SW4_PIN) == LOW){
+        // exits song when sw4 pressed or return key
+        char RemoteControl = oIR.GetKeyPressed();
+        if(digitalRead(SW4_PIN) == LOW || RemoteControl == KEY_RETUR)){
             ledcWriteTone(SPK_CHANNEL, 0);
             digitalWrite(LED1, LOW);
             digitalWrite(LED2, LOW);
