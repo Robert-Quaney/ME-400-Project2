@@ -58,14 +58,13 @@ bool servosAttached = false; // setting servos as unattached
 
 // for three 33 3 3 3
 void IRAM_ATTR PWM_ISR();
-const int interruptPinPWM = 37; 
+const int interruptPinPWM = OPTO_PIN; 
 
 volatile unsigned long pwmcount = 0;
 volatile unsigned long tonecount = 0;
 
 double pwmfrequency = 0.0;
-
-unsigned long lastTime = millis();
+unsigned long lastTime;
 
 const int pulsesPerRevolution = 20;
 static String aval = "";
@@ -390,7 +389,7 @@ void Option2(char optionstate)
 
 void Option3(char optionstate, char keypressed)
 {
-    ledcWrite(PWM_CHANNEL, 0);
+    //ledcWrite(PWM_CHANNEL, 0);
     if (optionstate == 'C') // user pressed return after entering duty cycle
     {
         if (aval.length() > 0)
@@ -406,7 +405,7 @@ void Option3(char optionstate, char keypressed)
             ledcWrite(PWM_CHANNEL, pwmVal);
 
             pwmcount = 0;
-
+            lastTime = millis();
             attachInterrupt(digitalPinToInterrupt(interruptPinPWM), PWM_ISR, FALLING);
             motorRunning = true;
         }
@@ -432,7 +431,7 @@ float measureSpeed()
     if (elapsedTime <= 0)
         return 0.0;
 
-    float rpm = (pwmcount / pulsesPerRevolution) * 60.0 / elapsedTime;
+    float rpm = ((float)pwmcount / (float)pulsesPerRevolution) * 60.0 / elapsedTime;
 
     pwmcount = 0;
     lastTime = currentTime;
